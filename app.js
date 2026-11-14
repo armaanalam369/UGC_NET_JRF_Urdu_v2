@@ -1,5 +1,6 @@
 /* Urdu NET Arena — app.js  (needs manifest.js; papers in data/ load on demand) */
 (()=>{'use strict';
+if(!window.RULES||!window.PAPER_LIST){document.getElementById('app').innerHTML='<div class="card" style="margin-top:20px"><h3>⚠️ data/manifest.js not found</h3><p class="mu">Upload <b>manifest.js</b> into the <b>data</b> folder of your GitHub repository (next to the paper files like data/2021-1.js), then refresh this page.</p></div>';return}
 const $=s=>document.querySelector(s);
 window.PAPERS=window.PAPERS||{};
 const R=window.RULES,PL=window.PAPER_LIST,TP=R.topics,TN=TP.map(t=>t.n),IC={},CD={},UR={};

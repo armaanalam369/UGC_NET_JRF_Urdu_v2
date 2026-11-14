@@ -18,8 +18,8 @@ h1,h2,h3,.big,.qc,.timer,.stat b{font-family:Fraunces,serif;letter-spacing:-.02e
 @keyframes drift{to{transform:translate(7vmax,5vmax) scale(1.15)}}
 header{position:sticky;top:0;z-index:30;padding:max(10px,env(safe-area-inset-top)) 16px 10px;background:linear-gradient(var(--bg),transparent)}
 .brand{display:flex;align-items:center;gap:11px;max-width:760px;margin:0 auto}
-.brand b.mk{width:46px;height:46px;border-radius:16px;background:var(--g);color:#fff;display:grid;place-items:center;font:700 1.15rem 'Noto Nastaliq Urdu',serif;box-shadow:0 8px 20px rgba(244,63,94,.25);padding-top:6px}
-.brand span b{display:block;font:800 1.08rem Fraunces,serif;line-height:1.15}.brand small{color:var(--mu);font-size:.72rem;letter-spacing:.06em}
+.brand img.mk{width:44px;height:44px;border-radius:14px;object-fit:cover;box-shadow:0 8px 20px rgba(244,63,94,.22)}
+.brand span b{display:block;font:800 1.08rem Fraunces,serif;line-height:1.15}.brand small{color:var(--mu);font-size:.74rem;letter-spacing:.02em}
 #app{max-width:760px;margin:0 auto;padding:6px 16px 130px}
 #app.in{animation:rise .45s cubic-bezier(.2,.8,.3,1)}
 @keyframes rise{from{opacity:0;transform:translateY(16px)}}

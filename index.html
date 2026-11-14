@@ -3,14 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Urdu NET Arena · UGC NET JRF Paper II</title>
+<title>Wise Choice · UGC NET JRF Urdu Paper II</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body data-v="home">
 <div class="aurora"><i></i><i></i><i></i></div>
-<header><span class="brand"><b class="mk">اردو</b><span><b>Urdu NET Arena</b><small>UGC NET · JRF · Paper II</small></span></span></header>
+<header><span class="brand"><img class="mk" src="logo.png" alt="Wise Choice logo" width="44" height="44"><span><b>Wise Choice</b><small>Your Shortcut through the Syllabus!</small></span></span></header>
 <main id="app"></main>
 
 <!-- floating: start bar (home) / test dock (test) / speed-dial -->
@@ -54,7 +56,9 @@
 <div class="ov dim" id="tour"></div>
 <canvas id="cf"></canvas><div id="toast"></div>
 
-<script src="manifest.js"></script>
+<!-- 1) exam rules + units + quotes + paper list -->
+<script src="data/manifest.js"></script>
+<!-- 2) app logic (paper files load on demand from the paths in data/manifest.js) -->
 <script src="app.js"></script>
 </body>
 </html>
