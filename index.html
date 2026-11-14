@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-pal="emerald" data-motion="on">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Urdu NET Arena · UGC NET JRF Paper II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-v="home">
+<div class="aurora"><i></i><i></i><i></i></div>
+<header><span class="brand"><b class="mk">اردو</b><span><b>Urdu NET Arena</b><small>UGC NET · JRF · Paper II</small></span></span></header>
+<main id="app"></main>
+
+<!-- floating: start bar (home) / test dock (test) / speed-dial -->
+<div class="fl" id="sb"></div>
+<div class="fl" id="tb"></div>
+<div class="dial" id="dial"><div id="dItems"></div><button class="dmain" data-act="dial" aria-label="Open quick menu"><i></i><i></i><i></i></button></div>
+
+<div class="shade" id="shade" data-act="closegrid"></div>
+<div id="drawer"></div>
+
+<div class="shade" id="shade2" data-act="closesheet"></div>
+<div id="sheet" aria-label="Analytics and settings">
+  <div class="grab"></div>
+  <div class="shead"><b>Your Studio</b><button class="btn g s" data-act="closesheet">✕</button></div>
+  <div class="chips sm tscroll" id="stabs"></div>
+  <div id="sbody"></div>
+</div>
+
+<div id="tools" aria-label="Rough pad and calculator">
+  <div class="grab"></div>
+  <div class="thead"><div class="chips sm"><button class="chip on" id="tabPad" data-act="ttab" data-v="pad">✏️ Rough pad</button><button class="chip" id="tabCalc" data-act="ttab" data-v="calc">🧮 Calculator</button></div><button class="btn g s" data-act="toolsclose">✕</button></div>
+  <div id="padWrap">
+    <div class="ptools">
+      <button class="dot on" data-pc="auto" data-act="padcol" data-v="auto" style="background:var(--tx)" aria-label="Default ink"></button>
+      <button class="dot" data-pc="#ef4444" data-act="padcol" data-v="#ef4444" style="background:#ef4444" aria-label="Red"></button>
+      <button class="dot" data-pc="#3b82f6" data-act="padcol" data-v="#3b82f6" style="background:#3b82f6" aria-label="Blue"></button>
+      <button class="dot" data-pc="#10b981" data-act="padcol" data-v="#10b981" style="background:#10b981" aria-label="Green"></button>
+      <button class="chip" id="bErase" data-act="paderase">🧽 Eraser</button>
+      <button class="chip" data-act="padundo">↩ Undo</button>
+      <button class="chip" data-act="padclear">Clear</button>
+    </div>
+    <canvas id="pad"></canvas>
+  </div>
+  <div id="calcWrap" style="display:none"><div class="cdisp"><small id="cexp"></small><b id="cval">0</b></div><div class="ckeys" id="ckeys"></div></div>
+</div>
+
+<input type="file" id="imp" accept=".json,application/json" style="display:none">
+
+<div class="ov" id="pause"><div class="ovc"><div class="big">⏸</div><h2>Test paused</h2><p class="mu">Timer stopped · <b id="pLeft"></b> left.<br>Questions are hidden while paused.</p><div class="row c"><button class="btn" data-act="unpause">▶ Resume</button><button class="btn g" data-act="pauseexit">Save &amp; exit</button></div></div></div>
+<div class="ov dim" id="warn"><div class="ovc"><div class="big">⚠️</div><h2>You left full-screen</h2><p class="mu">In the real exam this would be flagged. Your timer is still running.</p><div class="row c"><button class="btn" data-act="fsback">Return to full-screen</button><button class="btn g" data-act="fsskip">Continue</button></div></div></div>
+<div class="ov dim" id="tour"></div>
+<canvas id="cf"></canvas><div id="toast"></div>
+
+<script src="manifest.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
