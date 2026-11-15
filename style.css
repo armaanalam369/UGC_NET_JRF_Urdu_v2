@@ -187,3 +187,7 @@ input[type=number]{border-radius:10px}
 .ckeys button{border-radius:14px}.cdisp{border-radius:14px}#pad{border-radius:14px;border-color:var(--b)}
 .strip span,.cnum span{border-radius:8px}
 #toast{border-radius:10px;font-family:Lora}
+.lbl{margin:12px 0 4px}.sub{margin:6px 0}
+.tile span{display:block;line-height:1.45}
+.lbl{margin:12px 0 4px}.sub{margin:6px 0}
+.tile span{display:block;line-height:1.45}

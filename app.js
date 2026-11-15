@@ -1,16 +1,19 @@
 /* Urdu NET Arena — app.js  (needs manifest.js; papers in data/ load on demand) */
 (()=>{'use strict';
-if(!window.RULES||!window.PAPER_LIST){document.getElementById('app').innerHTML='<div class="card" style="margin-top:20px"><h3>⚠️ data/manifest.js not found</h3><p class="mu">Upload <b>manifest.js</b> into the <b>data</b> folder of your GitHub repository (next to the paper files like data/2021-1.js), then refresh this page.</p></div>';return}
+if(!window.RULES||!window.RULES.papers||!window.PAPER_LIST){document.getElementById('app').innerHTML='<div class="card" style="margin-top:20px"><h3>⚠️ data/manifest.js not found or outdated</h3><p class="mu">Upload the new <b>manifest.js</b> into the <b>data</b> folder of your GitHub repository (next to the paper files like data/2021-1.js), then refresh this page.</p></div>';return}
 const $=s=>document.querySelector(s);
 window.PAPERS=window.PAPERS||{};
-const R=window.RULES,PL=window.PAPER_LIST,TP=R.topics,TN=TP.map(t=>t.n),IC={},CD={},UR={};
-TP.forEach(t=>{IC[t.n]=t.i;CD[t.n]=t.k||t.n.slice(0,4);UR[t.n]=t.ur||''});
+const R=window.RULES,PL=window.PAPER_LIST,PP=R.papers,PK=Object.keys(PP),IC={},CD={},UR={},SUB={},TALL=[];
+PL.forEach(p=>p.paper=p.paper||'II');
+PK.forEach(k=>PP[k].topics.forEach(t=>{IC[t.n]=t.i;CD[t.n]=t.k||t.n.slice(0,4);UR[t.n]=t.ur||'';SUB[t.n]=t.sub||[];TALL.push(t.n)}));
+let TP=PP.II.topics,TN=TP.map(t=>t.n);
+const setTP=p=>{TP=PP[p].topics;TN=TP.map(t=>t.n)},tnOf=p=>PP[p||'II'].topics.map(t=>t.n);
 const QUOTES=(window.QUOTES&&window.QUOTES.length)?window.QUOTES:['Small steps every day.'];
-const ti=s=>{const i=TN.indexOf(s);return i<0?999:i},DAY=864e5,INT=[1,3,7,14];
+const ti=s=>{const i=TALL.indexOf(s);return i<0?999:i},DAY=864e5,INT=[1,3,7,14];
 const put=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const get=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}};
 const del=k=>{try{localStorage.removeItem(k)}catch(e){}};
-const SET=Object.assign({font:1,motion:true,showTimer:true,autoNext:false,shuffleQ:false,shuffleO:false,confirmSubmit:true,autoWrong:true,haptic:true,wake:false,defMins:30,defNeg:R.negative>0,tools:true,fullscreen:true},get('un_set',{}));
+const SET=Object.assign({font:1,motion:true,showTimer:true,autoNext:false,shuffleQ:false,shuffleO:false,confirmSubmit:true,autoWrong:true,haptic:true,wake:false,defMins:30,defNeg:false,tools:true,fullscreen:true},get('un_set',{}));
 let ATT=get('un_att',[]),SAV=get('un_sav',{}),DAYM=get('un_days',{}),SEEN=get('un_seen',{}),LOADED=false;
 const root=document.documentElement,app=$('#app');
 root.dataset.theme=get('un_t','light');root.dataset.pal=get('un_p','oxblood');
@@ -20,12 +23,12 @@ const fmt=s=>{s=Math.max(0,s);return p2(Math.floor(s/60))+':'+p2(s%60)},pct=(a,b
 const tone=p=>p>=75?'#10b981':p>=50?'#f59e0b':'#ef4444',lab=p=>p>=75?'Strong':p>=50?'Average':'Weak';
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const URX=/[\u0600-\u06FF]/,bi=s=>URX.test(s)?`<span class="ur" dir="rtl">${s}</span>`:s;
-const pk=p=>p.year+'-'+p.shift,pl=p=>p.year+' · '+(R.shifts[p.shift]||'Shift '+p.shift);
+const pk=p=>(p.paper==='I'?'P1-':'')+p.year+'-'+p.shift,pl=p=>p.year+' · '+(R.shifts[p.shift]||'Shift '+p.shift);
 const byNew=(a,b)=>(b.year-a.year)||(b.shift-a.shift);
-let latest=PL.slice().sort(byNew)[0];
-const YS=()=>[...new Set(PL.map(p=>p.year))].sort((a,b)=>b-a);
-const S={kind:'test',run:'test',el:0,view:'home',year:String(latest.year),shift:String(latest.shift),sh:'all',mode:'full',pool:'all',secs:{},neg:SET.defNeg,tneg:true,mins:SET.defMins,cnt:20,qs:[],ans:[],qt:[],mk:{},fl:[],cur:0,left:0,total:0,t:null,grid:false,tab:'last',sf:'all',wl:null,src:'',paused:false,fs:false,fsx:0,tabx:0,tabNote:false};
-TN.forEach(t=>S.secs[t]=false);
+const latestOf=p=>PL.filter(x=>x.paper===p).sort(byNew)[0];
+const YS=pp=>[...new Set(PL.filter(p=>p.paper===(pp||S.paper)).map(p=>p.year))].sort((a,b)=>b-a);
+const S={kind:'test',run:'test',el:0,view:'home',paper:'II',tpaper:'II',ap:'II',subs:{},year:String((latestOf('II')||{year:'all'}).year),shift:String((latestOf('II')||{shift:1}).shift),sh:'all',mode:'full',pool:'all',secs:{},neg:SET.defNeg,tneg:true,mins:SET.defMins,cnt:20,qs:[],ans:[],qt:[],mk:{},fl:[],cur:0,left:0,total:0,t:null,grid:false,tab:'last',sf:'all',wl:null,src:'',paused:false,fs:false,fsx:0,tabx:0,tabNote:false};
+TALL.forEach(t=>S.secs[t]=false);
 const prefs=()=>{root.style.setProperty('--fs',['14.5px','16px','18px'][SET.font]);root.dataset.motion=SET.motion?'on':'off'};
 const saveSet=()=>{put('un_set',SET);prefs()};prefs();
 
@@ -46,7 +49,7 @@ const stat=(l,v)=>`<div class="stat"><span class="mu">${l}</span><b>${v}</b></di
 const empty=(i,t,d)=>`<div class="empty"><b>${i}</b><div><strong>${t}</strong></div><div>${d}</div></div>`;
 
 /* ---------- notebook (saved + spaced repetition) ---------- */
-function keep(q,f){const e=SAV[q._k]||(SAV[q._k]={k:q._k,s:q.s,c:q.c||'',q:q.q,o:q.o,a:q.a,e:q.e||'',src:q._src||''});e[f]=true}
+function keep(q,f){const e=SAV[q._k]||(SAV[q._k]={k:q._k,p:q._p||S.tpaper,s:q.s,c:q.c||'',q:q.q,o:q.o,a:q.a,e:q.e||'',src:q._src||''});e[f]=true}
 function persist(){Object.keys(SAV).forEach(k=>{if(!SAV[k].b&&!SAV[k].w)delete SAV[k]});put('un_sav',SAV)}
 const dueList=()=>Object.values(SAV).filter(e=>e.w&&(e.due||0)<=today0());
 const dueText=e=>{const d=Math.round(((e.due||0)-today0())/DAY);return d<=0?'Due today':'Review in '+d+'d'};
@@ -54,10 +57,10 @@ function streak(){let n=0,x=new Date();if(!DAYM[dkey(x)])x.setDate(x.getDate()-1
 function bestStreak(){let b=0,c=0,prev=null;Object.keys(DAYM).sort().forEach(k=>{const d=new Date(k+'T00:00');c=(prev&&Math.round((d-prev)/DAY)===1)?c+1:1;if(c>b)b=c;prev=d});return b}
 
 /* ---------- autosave / resume ---------- */
-function saveRun(){if(S.view!=='test')return;put('un_run',{run:S.run,mode:S.mode,tneg:S.tneg,src:S.src,ans:S.ans,qt:S.qt,mk:S.mk,fl:S.fl,cur:S.cur,left:S.left,total:S.total,el:S.el,fsx:S.fsx,tabx:S.tabx})}
+function saveRun(){if(S.view!=='test')return;put('un_run',{tp:S.tpaper,run:S.run,mode:S.mode,tneg:S.tneg,src:S.src,ans:S.ans,qt:S.qt,mk:S.mk,fl:S.fl,cur:S.cur,left:S.left,total:S.total,el:S.el,fsx:S.fsx,tabx:S.tabx})}
 function clearRun(){del('un_run');del('un_run_q')}
 function resume(){const r=get('un_run',null),q=get('un_run_q',null);if(!r||!q)return;
-Object.assign(S,{run:r.run,mode:r.mode,tneg:r.tneg,src:r.src,qs:q,ans:r.ans,qt:r.qt,mk:r.mk,fl:r.fl||q.map(()=>null),cur:r.cur,left:r.left,total:r.total,el:r.el,fsx:r.fsx||0,tabx:r.tabx||0,paused:false});
+Object.assign(S,{tpaper:r.tp||'II',run:r.run,mode:r.mode,tneg:r.tneg,src:r.src,qs:q,ans:r.ans,qt:r.qt,mk:r.mk,fl:r.fl||q.map(()=>null),cur:r.cur,left:r.left,total:r.total,el:r.el,fsx:r.fsx||0,tabx:r.tabx||0,paused:false});
 clearInterval(S.t);S.t=setInterval(tick,1000);getWake();reqFS(S.run,S.mode);test()}
 
 /* ---------- full-screen guard, tab tracking, pause ---------- */
@@ -77,11 +80,14 @@ $('#dial').classList.remove('open')}
 const dialClose=()=>$('#dial').classList.remove('open');
 
 /* ---------- questions pool ---------- */
-function poolQs(){const o=[];PL.forEach(p=>{const pp=PAPERS[pk(p)];if(pp)pp.questions.forEach((q,i)=>o.push({s:q.s,k:pk(p)+'#'+i,y:String(p.year),h:String(p.shift)}))});return o}
-function counts(year,sh,unseen){const c={};TN.forEach(t=>c[t]=0);poolQs().forEach(x=>{if(year!=='all'&&x.y!==String(year))return;if(sh!=='all'&&x.h!==String(sh))return;if(unseen&&SEEN[x.k])return;if(c[x.s]!==undefined)c[x.s]++});return c}
+function poolQs(){const o=[];PL.forEach(p=>{const pp=PAPERS[pk(p)];if(pp)pp.questions.forEach((q,i)=>o.push({s:q.s,k:pk(p)+'#'+i,y:String(p.year),h:String(p.shift),c:q.c||'',p:p.paper}))});return o}
+const subSel=u=>(SUB[u]||[]).filter(x=>S.subs[u+'|'+x]);
+const subOK=q=>{const s=subSel(q.s);return !s.length||s.includes(q.c)};
+function counts(year,sh,unseen,useSub,paper){paper=paper||S.paper;const c={};tnOf(paper).forEach(t=>c[t]=0);poolQs().forEach(x=>{if(x.p!==paper)return;if(year!=='all'&&x.y!==String(year))return;if(sh!=='all'&&x.h!==String(sh))return;if(unseen&&SEEN[x.k])return;if(useSub&&!subOK(x))return;if(c[x.s]!==undefined)c[x.s]++});return c}
+function subCounts(u,year,sh,unseen){const m={};poolQs().forEach(x=>{if(x.p!==S.paper||x.s!==u)return;if(year!=='all'&&x.y!==String(year))return;if(sh!=='all'&&x.h!==String(sh))return;if(unseen&&SEEN[x.k])return;m[x.c]=(m[x.c]||0)+1});return m}
 const sumC=(c,only)=>Object.keys(c).reduce((n,k)=>n+(!only||only[k]?c[k]:0),0);
 const loadP=p=>new Promise((res,rej)=>{const k=pk(p);if(PAPERS[k])return res(PAPERS[k]);const s=document.createElement('script');s.src=p.file;s.onload=()=>PAPERS[k]?res(PAPERS[k]):rej();s.onerror=rej;document.body.appendChild(s)});
-function preload(){return Promise.all(PL.map(p=>loadP(p).then(()=>p,()=>null))).then(r=>{const ok=r.filter(Boolean);if(ok.length&&ok.length<PL.length){PL.splice(0,PL.length,...ok);latest=PL.slice().sort(byNew)[0]}LOADED=true;if(S.view==='home')home(true)})}
+function preload(){return Promise.all(PL.map(p=>loadP(p).then(()=>p,()=>null))).then(r=>{const ok=r.filter(Boolean);if(ok.length&&ok.length<PL.length){PL.splice(0,PL.length,...ok)}LOADED=true;if(S.view==='home')home(true)})}
 const selMap=()=>{const m={};TN.forEach(t=>{if(S.secs[t])m[t]=1});return m};
 
 /* ---------- home ---------- */
@@ -96,56 +102,61 @@ return h}
 const step=(n,t)=>`<h2 class="step"><i>${n}</i>${t}</h2>`;
 const tile=(on,act,v,ic,t,d)=>`<button class="tile ${on?'on':''}" data-act="${act}" data-v="${v}"><em>${ic}</em><b>${t}</b><span>${d}</span></button>`;
 function home(keepScroll){
+setTP(S.paper);const rp=PP[S.paper],ys=YS();
 if(S.mode==='saved')S.mode='full';
-if(S.mode==='full'&&S.year==='all')S.year=String(latest.year);
+if(S.mode==='full'&&ys.length&&(S.year==='all'||!ys.includes(+S.year)))S.year=String(ys[0]);
 S.view='home';clearInterval(S.t);relWake();closeGrid();closeTools();fabs();
-const q=S.kind==='quiz',full=S.mode==='full',un=!full&&S.pool==='unseen',ys=YS();
+const q=S.kind==='quiz',full=S.mode==='full',un=!full&&S.pool==='unseen',pls=PL.filter(p=>p.paper===S.paper);
 const shF=full?S.shift:S.sh,cAll=counts('all','all',false),cY=counts(S.year,shF,un),nTot=sumC(cAll),nCov=TN.filter(t=>cAll[t]>0).length;
 const yq=y=>sumC(counts(y,'all',false));
-const stats=`<div class="stats">${stat('Papers',PL.length)}${stat('Questions',LOADED?nTot:'…')}${stat('Units',LOADED?nCov+'/'+TN.length:'…')}</div>`;
+const stats=`<div class="stats">${stat('Papers',pls.length)}${stat('Questions',LOADED?nTot:'…')}${stat('Units',LOADED?nCov+'/'+TN.length:'…')}</div>`;
 const yearChips=`<div class="chips">${(full?ys:['all',...ys]).map(y=>`<button class="chip ${String(S.year)===String(y)?'on':''}" data-act="year" data-v="${y}">${y==='all'?'📚 All years':y}${LOADED&&y!=='all'?` <span class="cn">${yq(y)}</span>`:''}</button>`).join('')}</div>`;
 const shifts=(full?[1,2]:['all',1,2]).map(s=>`<button class="${String(shF)===String(s)?'on':''}" data-act="shift" data-v="${s}">${s==='all'?'Both shifts':R.shifts[s]}</button>`).join('');
 let card='';
-if(full){const by=counts(S.year,S.shift,false),yt=sumC(by),has=PL.some(p=>String(p.year)===S.year&&String(p.shift)===S.shift);
-card=`<b>Standard exam pattern</b><p class="mu">${R.fullMinutes} minutes · all units · ${R.marks} marks per correct answer${R.negative?` · −${R.negative} per wrong answer`:' · no negative marking'}.</p>`+(has?(LOADED?`<div class="sec">${esc(S.year)} · ${R.shifts[S.shift]} · ${yt} questions</div><div class="tgrid">${TN.map(t=>`<span class="tag" style="${by[t]?'':'opacity:.4'}">${IC[t]} ${esc(CD[t])} <b>${by[t]}</b></span>`).join('')}</div>`:'<p class="mu">Loading paper details…</p>'):'<p class="mu" style="color:var(--rose)">This year/shift is not in the paper list yet.</p>')}
-else{const avail=sumC(cY,selMap()),g=agg(),selN=Object.keys(selMap()).length;
+if(full){const by=counts(S.year,S.shift,false),yt=sumC(by),has=pls.some(p=>String(p.year)===S.year&&String(p.shift)===S.shift);
+card=`<b>${rp.short} exam pattern</b><p class="mu">${rp.fullMinutes} minutes · ${rp.count} questions · ${rp.marks} marks per correct answer${rp.negative?` · −${rp.negative} per wrong answer`:' · no negative marking'}.</p>`+(has?(LOADED?`<div class="sec">${esc(S.year)} · ${R.shifts[S.shift]} · ${yt} questions</div><div class="tgrid">${TN.map(t=>`<span class="tag" style="${by[t]?'':'opacity:.4'}">${IC[t]} ${esc(CD[t])} <b>${by[t]}</b></span>`).join('')}</div>`:'<p class="mu">Loading paper details…</p>'):'<p class="mu" style="color:var(--rose)">This year/shift is not in the paper list yet.</p>')}
+else{const avail=sumC(counts(S.year,shF,un,true),selMap()),g=agg(),selN=Object.keys(selMap()).length;
 if(q)card+=`<b>Instant-feedback quiz</b><p class="mu">See the right answer and explanation right after each question. No timer.</p>`;
 card+=`<div class="line"><b>Choose units</b><span class="row"><button class="btn g s" data-act="topall">All</button><button class="btn g s" data-act="topweak">🎯 Weakest 3</button><button class="btn g s" data-act="topnone">None</button></span></div><p class="mu"><b>${selN}</b> of ${TN.length} units · <b>${LOADED?avail:'…'}</b> questions available${S.year==='all'?'':' in '+esc(S.year)}</p><div class="ugrid">`+TP.map((t,i)=>{const n=cY[t.n],gp=g[t.n]&&g[t.n].t?pct(g[t.n].c,g[t.n].t):null;
-return `<button class="ut ${S.secs[t.n]?'on':''}" ${LOADED&&!n&&!S.secs[t.n]?'disabled':''} data-act="sec" data-v="${esc(t.n)}"><i>${t.i}</i><span><b>${i+1}. ${esc(t.n)}</b><small class="ur" dir="rtl">${t.ur||''}</small></span><em>${LOADED?n:'…'}</em>${gp===null?'':`<u style="background:${tone(gp)}" title="Your accuracy ${gp}%"></u>`}</button>`}).join('')+`</div><p class="mu"><i class="mdot" style="background:#10b981"></i> strong <i class="mdot" style="background:#f59e0b"></i> average <i class="mdot" style="background:#ef4444"></i> weak — from your past tests</p>`+
-`<div class="line"><span>Question pool</span><span class="row"><button class="chip ${!un?'on':''}" data-act="pool" data-v="all">All</button><button class="chip ${un?'on':''}" data-act="pool" data-v="unseen">🆕 Unseen only</button></span></div>`+
+return `<button class="ut ${S.secs[t.n]?'on':''}" ${LOADED&&!n&&!S.secs[t.n]?'disabled':''} data-act="sec" data-v="${esc(t.n)}"><i>${t.i}</i><span><b>${i+1}. ${esc(t.n)}</b><small class="ur" dir="rtl">${t.ur||''}</small></span><em>${LOADED?n:'…'}</em>${gp===null?'':`<u style="background:${tone(gp)}" title="Your accuracy ${gp}%"></u>`}</button>`}).join('')+`</div><p class="mu"><i class="mdot" style="background:#10b981"></i> strong <i class="mdot" style="background:#f59e0b"></i> average <i class="mdot" style="background:#ef4444"></i> weak — from your past tests</p>`;
+const sh=TP.filter(t=>S.secs[t.n]&&(SUB[t.n]||[]).length);
+if(sh.length)card+=`<div class="sec">Sub-topics (optional)</div><p class="mu">Tap sub-topics to narrow down. Leave a unit's sub-topics unselected to practise the whole unit.</p>`+sh.map(t=>{const m=subCounts(t.n,S.year,shF,un);return `<div class="sub"><p class="lbl"><b>${t.i} ${esc(t.n)}</b></p><div class="chips sm">${SUB[t.n].map(x=>`<button class="chip ${S.subs[t.n+'|'+x]?'on':''}" data-act="sub" data-v="${esc(t.n+'|'+x)}">${esc(x)}${LOADED?` <span class="cn">${m[x]||0}</span>`:''}</button>`).join('')}</div></div>`}).join('')+`<button class="btn g s" data-act="subclear">Clear sub-topics</button>`;
+card+=`<div class="line"><span>Question pool</span><span class="row"><button class="chip ${!un?'on':''}" data-act="pool" data-v="all">All</button><button class="chip ${un?'on':''}" data-act="pool" data-v="unseen">🆕 Unseen only</button></span></div>`+
 `<div class="line"><span>Number of questions</span><span class="row">${[10,20,30,0].map(c=>`<button class="chip ${S.cnt===c?'on':''}" data-act="cnt" data-v="${c}">${c||'All'+(LOADED?' ('+avail+')':'')}</button>`).join('')}</span></div>`}
-if(!full&&R.negative)card+=`<div class="line"><span>Negative marking</span>${sw(S.neg,'neg')}</div>`;
+if(!full&&rp.negative)card+=`<div class="line"><span>Negative marking</span>${sw(S.neg,'neg')}</div>`;
 if(!full&&!q)card+=`<div class="line"><span>Time (minutes)</span><input type="number" id="mins" min="1" max="180" value="${S.mins}"></div>`;
 card+=`<div class="line"><span>Rough pad &amp; calculator<small>Show ✏️ and 🧮 in the test menu</small></span>${sw(SET.tools,'tg','tools')}</div>`;
 if(!q&&full)card+=`<div class="line"><span>Full-screen exam mode<small>Warns if you leave full-screen or switch tabs</small></span>${sw(SET.fullscreen,'tg','fullscreen')}</div>`;
-const nStart=full?sumC(counts(S.year,S.shift,false)):Math.min(S.cnt||1e9,sumC(cY,selMap()));
-render(`<section class="hero"><div class="big">اردو</div><h1>Master UGC NET JRF Urdu</h1><p class="mu">Practise real Paper II questions by year &amp; shift — or drill one unit at a time.</p></section>${stats}${homeCards()}`+
-step(1,'Choose a mode')+`<div class="tiles">${tile(!q,'kind','test','📝','Exam Test','Timed, like the real paper')}${tile(q,'kind','quiz','💡','Quiz','Instant answers &amp; notes')}</div>`+
-step(2,'Choose the scope')+`<div class="tiles">${tile(full,'mode','full','📜','Full paper','Pick a year &amp; shift')}${tile(!full,'mode','sec','📚','Unit-wise','Practise chosen syllabus units')}</div>`+
-step(3,full?'Pick year &amp; shift':'Filter by year &amp; shift')+yearChips+`<div class="seg">${shifts}</div>`+
+const nStart=full?sumC(counts(S.year,S.shift,false)):Math.min(S.cnt||1e9,sumC(counts(S.year,shF,un,true),selMap()));
+const ptile=k=>{const r=PP[k];return tile(S.paper===k,'paper',k,r.icon,r.short,`${r.tag}<br>${r.count} Qs · ${r.count*r.marks} marks · ${r.fullMinutes} min`)};
+render(`<section class="hero"><div class="big">اردو</div><h1>Complete UGC NET JRF Urdu Prep</h1><p class="mu">Paper I &amp; Paper II · previous-year papers by year &amp; shift · unit and sub-topic practice.</p></section>${stats}${homeCards()}`+
+step(1,'Choose a paper')+`<div class="tiles">${PK.slice().reverse().map(ptile).join('')}</div>`+
+step(2,'Choose a mode')+`<div class="tiles">${tile(!q,'kind','test','📝','Exam Test','Timed, like the real paper')}${tile(q,'kind','quiz','💡','Quiz','Instant answers &amp; notes')}</div>`+
+step(3,'Choose the scope')+`<div class="tiles">${tile(full,'mode','full','📜','Full paper','Pick a year &amp; shift')}${tile(!full,'mode','sec','📚','Unit-wise','Units &amp; sub-topics of '+rp.short)}</div>`+
+step(4,full?'Pick year &amp; shift':'Filter by year &amp; shift')+yearChips+`<div class="seg">${shifts}</div>`+
 `<div class="card">${card}</div><div style="height:90px"></div>`,keepScroll);
-const ok=full?PL.some(p=>String(p.year)===S.year&&String(p.shift)===S.shift):true;
+const ok=full?pls.some(p=>String(p.year)===S.year&&String(p.shift)===S.shift):true;
 $('#sb').innerHTML=`<button class="go" data-act="start" ${ok?'':'disabled'}>${q?'Start Quiz':'Start Test'}${LOADED&&nStart?' · '+nStart+' questions':''} →</button>`}
 document.addEventListener('input',e=>{if(e.target.id==='mins')S.mins=+e.target.value||1;if(e.target.id==='dm'){SET.defMins=Math.max(1,Math.min(180,+e.target.value||30));S.mins=SET.defMins;saveSet()}});
 
 /* ---------- start ---------- */
 async function start(opt){
-if(S.view==='test')return;const sec=S.mode==='sec',secs=TN.filter(t=>S.secs[t]);
+if(S.view==='test')return;const sec=S.mode==='sec',secs=TN.filter(t=>S.secs[t]),rp=PP[S.paper];
 if(sec&&!secs.length)return alert('Select at least one unit.');
-const list=PL.filter(p=>sec?((S.year==='all'||String(p.year)===S.year)&&(S.sh==='all'||String(p.shift)===S.sh)):(String(p.year)===S.year&&String(p.shift)===S.shift));
+const list=PL.filter(p=>p.paper===S.paper&&(sec?((S.year==='all'||String(p.year)===S.year)&&(S.sh==='all'||String(p.shift)===S.sh)):(String(p.year)===S.year&&String(p.shift)===S.shift)));
 if(!list.length)return alert('Please choose an available year and shift.');
 if(get('un_run',null)&&!confirm('You have an unfinished test. Discard it and start a new one?'))return;
 reqFS(S.kind,S.mode);let papers;
-try{papers=await Promise.all(list.map(loadP))}catch(e){exitFS();return alert('Could not load a paper file. Check the paths in manifest.js.')}
+try{papers=await Promise.all(list.map(loadP))}catch(e){exitFS();return alert('Could not load a paper file. Check the paths in data/manifest.js.')}
 let qs=[];const cnt=(opt&&opt.cnt!=null)?opt.cnt:S.cnt;
-papers.forEach((p,pi)=>p.questions.forEach((q,i)=>{if(!sec||secs.includes(q.s))qs.push({...q,_k:pk(list[pi])+'#'+i,_src:R.examName+' '+pl(list[pi])})}));
+papers.forEach((p,pi)=>p.questions.forEach((q,i)=>{if(!sec||(secs.includes(q.s)&&subOK(q)))qs.push({...q,_k:pk(list[pi])+'#'+i,_p:S.paper,_src:R.examName+' '+rp.short+' '+pl(list[pi])})}));
 if(sec&&S.pool==='unseen')qs=qs.filter(q=>!SEEN[q._k]);
 if(!qs.length){exitFS();return alert(sec&&S.pool==='unseen'?'You have already seen every question here. Switch the pool to "All".':'No questions found for this selection.')}
-if(sec){if(cnt>0&&qs.length>cnt)qs=shuf(qs).slice(0,cnt);qs.sort((a,b)=>ti(a.s)-ti(b.s));S.src=R.examName+' · Unit practice'+(S.year==='all'?'':' · '+S.year)}
-else S.src=R.examName+' '+pl(list[0]);
-begin(qs,S.kind==='quiz'?0:(S.mode==='full'?R.fullMinutes:Math.max(1,S.mins))*60)}
+if(sec){if(cnt>0&&qs.length>cnt)qs=shuf(qs).slice(0,cnt);qs.sort((a,b)=>ti(a.s)-ti(b.s));S.src=R.examName+' '+rp.short+' · Unit practice'+(S.year==='all'?'':' · '+S.year)}
+else S.src=R.examName+' '+rp.short+' '+pl(list[0]);
+begin(qs,S.kind==='quiz'?0:(S.mode==='full'?rp.fullMinutes:Math.max(1,S.mins))*60)}
 function begin(qs,total,kind){
-S.run=kind||S.kind;S.tneg=S.neg;S.paused=false;S.fsx=0;S.tabx=0;S.tabNote=false;
+S.tpaper=S.paper;S.run=kind||S.kind;S.tneg=S.neg;S.paused=false;S.fsx=0;S.tabx=0;S.tabNote=false;
 if(SET.shuffleQ){const g={},o=[];qs.forEach(q=>{if(!g[q.s]){g[q.s]=[];o.push(q.s)}g[q.s].push(q)});qs=[];o.forEach(s=>qs=qs.concat(shuf(g[s])))}
 if(SET.shuffleO)qs=qs.map(q=>{const ord=shuf(q.o.map((_,i)=>i));return {...q,o:ord.map(i=>q.o[i]),a:ord.indexOf(q.a)}});
 S.qs=qs;S.ans=qs.map(()=>null);S.qt=qs.map(()=>0);S.fl=qs.map(()=>null);S.mk={};S.cur=0;S.total=total;S.left=total;S.el=0;
@@ -181,7 +192,7 @@ function closeGrid(){S.grid=false;$('#drawer').classList.remove('show');$('#shad
 function submit(){
 clearInterval(S.t);relWake();closeGrid();closeTools();exitFS();clearRun();S.paused=false;$('#pause').classList.remove('show');$('#warn').classList.remove('show');
 S.view='result';fabs();$('#tb').innerHTML='';$('#sb').innerHTML='';
-const neg=(S.run==='test'&&S.mode==='full')?R.negative:(S.tneg?R.negative:0),mk=R.marks||1;
+const RT=PP[S.tpaper]||PP.II,neg=(S.run==='test'&&S.mode==='full')?RT.negative:(S.tneg?RT.negative:0),mk=RT.marks||1;
 const st={},det=[],full=[],conf={};let sc=0,att=0,mastered=0;const tomorrow=today0()+DAY;
 S.qs.forEach((q,i)=>{const r=S.ans[i]===null?'n':S.ans[i]===q.a?'c':'w',f=S.fl[i]||'u';
 const x=st[q.s]=st[q.s]||{c:0,w:0,n:0,t:0},cf=conf[f]=conf[f]||{c:0,w:0,n:0};
@@ -193,7 +204,7 @@ else if(r==='c'&&S.mode==='saved'&&e&&e.w){e.box=(e.box||1)+1;if(e.box>4){e.w=fa
 persist();put('un_seen',SEEN);
 const dk=dkey(),dd=DAYM[dk]||(DAYM[dk]={q:0,t:0});dd.q+=att;dd.t++;put('un_days',DAYM);
 const max=S.qs.length*mk;
-ATT.push({ts:Date.now(),src:S.mode==='saved'?'Revision practice':S.src+(S.run==='quiz'?' · Quiz':''),mode:S.mode,run:S.run,sc,max,neg,mk,used:S.el,total:S.total,secs:st,det,conf,fsx:S.fsx,tabx:S.tabx,full});
+ATT.push({paper:S.tpaper,ts:Date.now(),src:S.mode==='saved'?'Revision practice':S.src+(S.run==='quiz'?' · Quiz':''),mode:S.mode,run:S.run,sc,max,neg,mk,used:S.el,total:S.total,secs:st,det,conf,fsx:S.fsx,tabx:S.tabx,full});
 if(ATT.length>40)ATT.shift();ATT.forEach((a,i)=>{if(i<ATT.length-5)delete a.full});put('un_att',ATT);
 render(`<div class="card res">${ring(sc,max)}<p class="mu">Time taken: ${fmt(ATT[ATT.length-1].used)}${S.fsx+S.tabx?' · ⚠️ '+(S.fsx+S.tabx)+' focus lapse(s)':''}</p></div>`+
 Object.keys(st).sort((a,b)=>ti(a)-ti(b)).map(k=>{const v=st[k];return `<div class="card"><b>${IC[k]||''} ${esc(k)}</b> <span class="mu">✅ ${v.c} · ❌ ${v.w} · ⏭ ${v.n}</span>${bar(pct(v.c,v.t))}</div>`}).join('')+
@@ -218,18 +229,18 @@ if(rows.length===1)return alert('You did not attempt any question in the last te
 download('urdu-net-attempted-'+dkey(new Date(a.ts))+'.csv','\ufeff'+rows.map(r=>r.map(c=>'"'+String(c).replace(/<[^>]*>/g,' ').replace(/"/g,'""')+'"').join(',')).join('\r\n'),'text/csv;charset=utf-8')}
 
 /* ---------- charts ---------- */
-function radar(map){const N=TN.length,cx=170,cy=160,r=96,f=n=>n.toFixed(1);
+function radar(map,tn){tn=tn||TN;const N=tn.length,cx=170,cy=160,r=96,f=n=>n.toFixed(1);
 const pt=(i,v)=>{const a=-Math.PI/2+2*Math.PI*i/N;return [cx+Math.cos(a)*r*v,cy+Math.sin(a)*r*v]};
 let s='<svg viewBox="0 0 340 320" style="width:100%;height:auto" role="img" aria-label="Radar chart of unit strengths">';
-[.25,.5,.75,1].forEach(l=>s+=`<polygon points="${TN.map((_,i)=>pt(i,l).map(f).join(',')).join(' ')}" fill="none" stroke="var(--bd)"/>`);
-TN.forEach((t,i)=>{const e=pt(i,1),l=pt(i,1.17),c=Math.cos(-Math.PI/2+2*Math.PI*i/N),has=!!(map[t]&&map[t].t);
+[.25,.5,.75,1].forEach(l=>s+=`<polygon points="${tn.map((_,i)=>pt(i,l).map(f).join(',')).join(' ')}" fill="none" stroke="var(--bd)"/>`);
+tn.forEach((t,i)=>{const e=pt(i,1),l=pt(i,1.17),c=Math.cos(-Math.PI/2+2*Math.PI*i/N),has=!!(map[t]&&map[t].t);
 s+=`<line x1="${cx}" y1="${cy}" x2="${f(e[0])}" y2="${f(e[1])}" stroke="var(--bd)"/><text x="${f(l[0])}" y="${f(l[1]+3)}" text-anchor="${c>.3?'start':c<-.3?'end':'middle'}" font-size="9" font-weight="700" style="fill:var(--mu)" opacity="${has?1:.4}">${esc(CD[t])}</text>`});
-const vals=TN.map((t,i)=>{const m=map[t];return pt(i,m&&m.t?pct(m.c,m.t)/100:0)});
+const vals=tn.map((t,i)=>{const m=map[t];return pt(i,m&&m.t?pct(m.c,m.t)/100:0)});
 s+=`<polygon points="${vals.map(p=>p.map(f).join(',')).join(' ')}" style="fill:var(--a);stroke:var(--a)" fill-opacity=".28" stroke-width="2" stroke-linejoin="round"/>`;
-vals.forEach((p,i)=>{const m=map[TN[i]];if(m&&m.t)s+=`<circle cx="${f(p[0])}" cy="${f(p[1])}" r="3" fill="${tone(pct(m.c,m.t))}"/>`});
+vals.forEach((p,i)=>{const m=map[tn[i]];if(m&&m.t)s+=`<circle cx="${f(p[0])}" cy="${f(p[1])}" r="3" fill="${tone(pct(m.c,m.t))}"/>`});
 return s+'</svg>'}
-function bars(map){const rh=19;let s=`<svg viewBox="0 0 340 ${TN.length*rh+6}" style="width:100%;height:auto" role="img" aria-label="Accuracy by unit">`;
-TN.forEach((t,i)=>{const y=i*rh+3,has=map[t]&&map[t].t,p=has?pct(map[t].c,map[t].t):0;
+function bars(map,tn){tn=tn||TN;const rh=19;let s=`<svg viewBox="0 0 340 ${tn.length*rh+6}" style="width:100%;height:auto" role="img" aria-label="Accuracy by unit">`;
+tn.forEach((t,i)=>{const y=i*rh+3,has=map[t]&&map[t].t,p=has?pct(map[t].c,map[t].t):0;
 s+=`<text x="0" y="${y+11}" font-size="9.5" style="fill:var(--tx)" opacity="${has?1:.45}">${esc(t.length>26?t.slice(0,25)+'…':t)}</text><rect x="150" y="${y+2}" width="152" height="10" rx="5" style="fill:var(--bd)"/>${has?`<rect x="150" y="${y+2}" width="${Math.max(4,p*1.52)}" height="10" rx="5" fill="${tone(p)}"/>`:''}<text x="340" y="${y+11}" text-anchor="end" font-size="9.5" font-weight="700" style="fill:var(--mu)">${has?p+'%':'–'}</text>`});
 return s+'</svg>'}
 function heat(){const W=17,cell=14,gap=3,today=new Date();today.setHours(0,0,0,0);const start=new Date(today);start.setDate(today.getDate()-((W-1)*7+today.getDay()));
@@ -243,8 +254,8 @@ return s+`</svg><div class="legend"><span style="margin-right:auto">${act} activ
 
 /* ---------- analytics ---------- */
 function trow(k,v,btn){const p=pct(v.c,v.t);return `<div class="card"><div class="line"><b>${IC[k]||''} ${esc(k)}</b><b style="color:${tone(p)}">${p}% · ${lab(p)}</b></div><div class="line"><span class="mu">${v.c}/${v.t} correct · ${v.w} wrong · ${v.n} skipped</span>${btn?`<button class="btn g s" data-act="ptopic" data-v="${esc(k)}">Practise</button>`:''}</div>${bar(p)}</div>`}
-function agg(){const s={};ATT.forEach(a=>Object.keys(a.secs).forEach(k=>{const v=a.secs[k],x=s[k]||(s[k]={c:0,w:0,n:0,t:0});x.c+=v.c;x.w+=v.w;x.n+=v.n;x.t+=v.t}));return s}
-function aggConf(){const s={};ATT.forEach(a=>Object.keys(a.conf||{}).forEach(k=>{const v=a.conf[k],x=s[k]||(s[k]={c:0,w:0,n:0});x.c+=v.c;x.w+=v.w;x.n+=v.n}));return s}
+function agg(paper){paper=paper||S.paper;const s={};ATT.filter(a=>(a.paper||'II')===paper).forEach(a=>Object.keys(a.secs).forEach(k=>{const v=a.secs[k],x=s[k]||(s[k]={c:0,w:0,n:0,t:0});x.c+=v.c;x.w+=v.w;x.n+=v.n;x.t+=v.t}));return s}
+function aggConf(paper){paper=paper||S.paper;const s={};ATT.filter(a=>(a.paper||'II')===paper).forEach(a=>Object.keys(a.conf||{}).forEach(k=>{const v=a.conf[k],x=s[k]||(s[k]={c:0,w:0,n:0});x.c+=v.c;x.w+=v.w;x.n+=v.n}));return s}
 function weakFirst(g){return Object.keys(g).sort((a,b)=>pct(g[a].c,g[a].t)-pct(g[b].c,g[b].t)||ti(a)-ti(b))}
 function nums(list,col,max){max=max||15;if(!list.length)return '<span class="mu">None 🎉</span>';return `<div class="cnum">${list.slice(0,max).map(n=>`<span style="background:${col}">${n}</span>`).join('')}${list.length>max?`<span class="mu" style="background:none;color:var(--mu)">+${list.length-max} more</span>`:''}</div>`}
 function timeBlock(a){const n=a.det.length,avg=a.det.reduce((s,d)=>s+d.t,0)/n||1;
@@ -262,17 +273,18 @@ if(cf.s&&(cf.s.c+cf.s.w+cf.s.n)&&!cf.s.w)h+='<p>✅ Your "Sure" answers were all
 return h+'</div>'}
 function tLast(){const a=ATT[ATT.length-1];if(!a)return empty('📊','No test yet','Finish a test and its full analysis shows up here.');
 let c=0,w=0;Object.keys(a.secs).forEach(k=>{c+=a.secs[k].c;w+=a.secs[k].w});
-return `<p class="mu">${esc(a.src)} · ${new Date(a.ts).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</p><div class="stats">${stat('Score',a.sc.toFixed(2)+' / '+a.max)}${stat('Accuracy',pct(c,c+w)+'%')}${stat('Attempted',(c+w)+' / '+a.det.length)}${stat('Negative marks','−'+(w*(a.neg||0)).toFixed(2))}${stat('Avg time / Q',Math.round(a.used/a.det.length)+'s')}${stat('Time taken',fmt(a.used))}${(a.fsx||a.tabx)?stat('Focus lapses','⚠️ '+((a.fsx||0)+(a.tabx||0))):''}</div>${a.full?'<button class="btn wide" data-act="exportq">⬇ Export attempted questions + my answers (CSV)</button>':''}<div class="sec">Strength radar</div><div class="card">${radar(a.secs)}</div><div class="sec">Question map</div><div class="strip">${a.det.map((d,i)=>`<span style="background:${d.r==='c'?'#10b981':d.r==='w'?'#ef4444':'#6b7280'}">${i+1}</span>`).join('')}</div>${timeBlock(a)}${confBlock(a.conf||{})}<div class="sec">Unit-wise (this test)</div>${Object.keys(a.secs).sort((x,y)=>ti(x)-ti(y)).map(k=>trow(k,a.secs[k])).join('')}`}
-function spark(){const p=ATT.slice(-12).map(a=>Math.max(0,Math.min(100,a.sc/a.max*100)));if(p.length<2)return '<p class="mu">Take 2+ tests to see your trend.</p>';
+return `<p class="mu">${esc(a.src)} · ${new Date(a.ts).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</p><div class="stats">${stat('Score',a.sc.toFixed(2)+' / '+a.max)}${stat('Accuracy',pct(c,c+w)+'%')}${stat('Attempted',(c+w)+' / '+a.det.length)}${stat('Negative marks','−'+(w*(a.neg||0)).toFixed(2))}${stat('Avg time / Q',Math.round(a.used/a.det.length)+'s')}${stat('Time taken',fmt(a.used))}${(a.fsx||a.tabx)?stat('Focus lapses','⚠️ '+((a.fsx||0)+(a.tabx||0))):''}</div>${a.full?'<button class="btn wide" data-act="exportq">⬇ Export attempted questions + my answers (CSV)</button>':''}<div class="sec">Strength radar</div><div class="card">${radar(a.secs,tnOf(a.paper))}</div><div class="sec">Question map</div><div class="strip">${a.det.map((d,i)=>`<span style="background:${d.r==='c'?'#10b981':d.r==='w'?'#ef4444':'#6b7280'}">${i+1}</span>`).join('')}</div>${timeBlock(a)}${confBlock(a.conf||{})}<div class="sec">Unit-wise (this test)</div>${Object.keys(a.secs).sort((x,y)=>ti(x)-ti(y)).map(k=>trow(k,a.secs[k])).join('')}`}
+function spark(arr){const p=arr.slice(-12).map(a=>Math.max(0,Math.min(100,a.sc/a.max*100)));if(p.length<2)return '<p class="mu">Take 2+ tests to see your trend.</p>';
 return `<svg viewBox="0 0 200 50" preserveAspectRatio="none" style="width:100%;height:70px"><polyline points="${p.map((v,i)=>(i*200/(p.length-1)).toFixed(1)+','+(48-v*.46).toFixed(1)).join(' ')}" fill="none" style="stroke:var(--a)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`}
-function tAll(){const g=agg(),s=streak();let c=0,w=0,t=0,best=0,sum=0;Object.keys(g).forEach(k=>{c+=g[k].c;w+=g[k].w});ATT.forEach(a=>{const p=a.sc/a.max*100;sum+=p;if(p>best)best=p;t+=a.used});
-const h=`<div class="stats">${stat('Tests taken',ATT.length)}${stat('Avg score',ATT.length?Math.round(sum/ATT.length)+'%':'–')}${stat('Best score',ATT.length?Math.round(best)+'%':'–')}${stat('Accuracy',ATT.length?pct(c,c+w)+'%':'–')}${stat('Study streak','🔥 '+s+' day'+(s===1?'':'s'))}${stat('Best streak','🏆 '+bestStreak()+' day'+(bestStreak()===1?'':'s'))}</div><div class="sec">Daily practice calendar</div><div class="card">${heat()}</div>`;
-if(!ATT.length)return h+empty('📈','No test data yet','Radar, bar charts and trends appear after your first test.');
-const weak=weakFirst(g).slice(0,3);
-return h+`<div class="card"><span class="mu">Score trend (last 12 tests)</span>${spark()}</div><div class="sec">Strength radar (all tests)</div><div class="card">${radar(g)}</div><div class="sec">Accuracy by unit</div><div class="card">${bars(g)}</div>${confBlock(aggConf())}<div class="sec">Focus on these units</div>${weak.map(k=>trow(k,g[k],true)).join('')}<div class="sec">Recent tests</div>${ATT.slice(-5).reverse().map(a=>`<div class="line"><span>${esc(a.src)}<small>${new Date(a.ts).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</small></span><b>${a.sc.toFixed(1)}/${a.max}</b></div>`).join('')}<p class="mu">Total practice time: ${Math.round(t/60)} min</p>`}
-function tTopics(){if(!ATT.length)return empty('📚','No unit data','Take a test and all 10 units will be ranked here, weakest first.');
-const g=agg(),done=weakFirst(g),un=TN.filter(k=>!g[k]);
-return `<div class="card">${bars(g)}</div><p class="mu">Weakest units first — tap Practise to drill one.</p>${done.map(k=>trow(k,g[k],true)).join('')}${un.length?`<div class="sec">Not attempted yet (${un.length})</div><div class="tgrid">${un.map(k=>`<button class="chip" data-act="ptopic" data-v="${esc(k)}">${IC[k]} ${esc(k)}</button>`).join('')}</div>`:''}`}
+function tAll(){const at=ATT.filter(a=>(a.paper||'II')===S.ap),g=agg(S.ap),s=streak();let c=0,w=0,t=0,best=0,sum=0;Object.keys(g).forEach(k=>{c+=g[k].c;w+=g[k].w});at.forEach(a=>{const p=a.sc/a.max*100;sum+=p;if(p>best)best=p;t+=a.used});
+const h=`<div class="stats">${stat('Tests taken',at.length)}${stat('Avg score',at.length?Math.round(sum/at.length)+'%':'–')}${stat('Best score',at.length?Math.round(best)+'%':'–')}${stat('Accuracy',at.length?pct(c,c+w)+'%':'–')}${stat('Study streak','🔥 '+s+' day'+(s===1?'':'s'))}${stat('Best streak','🏆 '+bestStreak()+' day'+(bestStreak()===1?'':'s'))}</div><div class="sec">Daily practice calendar</div><div class="card">${heat()}</div>`;
+if(!at.length)return h+empty('📈','No '+PP[S.ap].short+' tests yet','Radar, bar charts and trends appear after your first '+PP[S.ap].short+' test.');
+const weak=weakFirst(g).slice(0,3),tn=tnOf(S.ap);
+return h+`<div class="card"><span class="mu">Score trend (last 12 tests)</span>${spark(at)}</div><div class="sec">Strength radar</div><div class="card">${radar(g,tn)}</div><div class="sec">Accuracy by unit</div><div class="card">${bars(g,tn)}</div>${confBlock(aggConf(S.ap))}<div class="sec">Focus on these units</div>${weak.map(k=>trow(k,g[k],true)).join('')}<div class="sec">Recent tests</div>${at.slice(-5).reverse().map(a=>`<div class="line"><span>${esc(a.src)}<small>${new Date(a.ts).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</small></span><b>${a.sc.toFixed(1)}/${a.max}</b></div>`).join('')}<p class="mu">Total practice time: ${Math.round(t/60)} min</p>`}
+function tTopics(){const tn=tnOf(S.ap),g=agg(S.ap);if(!ATT.some(a=>(a.paper||'II')===S.ap))return empty('📚','No '+PP[S.ap].short+' unit data','Take a '+PP[S.ap].short+' test and all its units will be ranked here, weakest first.');
+const done=weakFirst(g),un=tn.filter(k=>!g[k]);
+return `<div class="card">${bars(g,tn)}</div><p class="mu">Weakest units first — tap Practise to drill one.</p>${done.map(k=>trow(k,g[k],true)).join('')}${un.length?`<div class="sec">Not attempted yet (${un.length})</div><div class="tgrid">${un.map(k=>`<button class="chip" data-act="ptopic" data-v="${esc(k)}">${IC[k]} ${esc(k)}</button>`).join('')}</div>`:''}`}
+const apChips=()=>`<div class="chips sm">${PK.slice().reverse().map(k=>`<button class="chip ${S.ap===k?'on':''}" data-act="ap" data-v="${k}">${PP[k].icon} ${PP[k].short}</button>`).join('')}</div>`;
 function savedList(){return Object.values(SAV).filter(e=>S.sf==='all'||(S.sf==='b'&&e.b)||(S.sf==='w'&&e.w)||(S.sf==='d'&&e.w&&(e.due||0)<=today0())).sort((a,b)=>(a.due||0)-(b.due||0))}
 function tSav(){const all=Object.keys(SAV).length,l=savedList(),due=dueList().length;
 const h=`<div class="chips sm">${[['all','All ('+all+')'],['d','🔁 Due today ('+due+')'],['w','❌ Wrong notebook'],['b','🔖 Bookmarked']].map(x=>`<button class="chip ${S.sf===x[0]?'on':''}" data-act="sfil" data-v="${x[0]}">${x[1]}</button>`).join('')}</div><p class="mu">Spaced repetition: wrong answers return after 1 → 3 → 7 → 14 days. Get one right at the end and it's mastered.</p>`;
@@ -282,13 +294,13 @@ const setRow=(l,d,c)=>`<div class="line"><span>${l}${d?'<small>'+d+'</small>':''
 function tSet(){const kb=Math.round((JSON.stringify(ATT).length+JSON.stringify(SAV).length)/1024*10)/10;
 const cols={oxblood:'#8b1e2d',indigo:'#2b3a67',verdigris:'#2f6b5b',saffron:'#b5651d',walnut:'#5a3a22'};
 return `<div class="sec">Appearance</div><div class="card">${setRow('Dark mode','',sw(root.dataset.theme==='dark','theme'))}<div class="line"><span>Colour palette</span><span class="row">${Object.keys(cols).map(k=>`<button class="dot ${root.dataset.pal===k?'on':''}" data-act="pick" data-v="${k}" style="background:${cols[k]}" aria-label="${k}"></button>`).join('')}</span></div><div class="line"><span>Text size</span><span class="row">${['A−','A','A+'].map((l,i)=>`<button class="chip ${SET.font===i?'on':''}" data-act="font" data-v="${i}">${l}</button>`).join('')}</span></div>${setRow('Motion graphics','Turn off to save battery',sw(SET.motion,'tg','motion'))}</div>
-<div class="sec">Test experience</div><div class="card">${setRow('Rough pad &amp; calculator','In the test menu',sw(SET.tools,'tg','tools'))}${setRow('Full-screen exam mode','Full-paper exam tests only',sw(SET.fullscreen,'tg','fullscreen'))}${setRow('Show timer','Hide it to reduce pressure',sw(SET.showTimer,'tg','showTimer'))}${setRow('Auto-next on answer','Jump ahead after choosing',sw(SET.autoNext,'tg','autoNext'))}${setRow('Shuffle questions','Within each unit',sw(SET.shuffleQ,'tg','shuffleQ'))}${setRow('Shuffle options','Stops memorising positions',sw(SET.shuffleO,'tg','shuffleO'))}${setRow('Confirm before submit','',sw(SET.confirmSubmit,'tg','confirmSubmit'))}${setRow('Auto-save wrong answers','Builds your revision notebook',sw(SET.autoWrong,'tg','autoWrong'))}${setRow('Haptic feedback','Light vibration on taps',sw(SET.haptic,'tg','haptic'))}${setRow('Keep screen awake','During tests',sw(SET.wake,'tg','wake'))}${setRow('Default unit-test time','Minutes',`<input type="number" id="dm" min="1" max="180" value="${SET.defMins}">`)}${R.negative?setRow('Negative marking by default','For unit-wise tests',sw(SET.defNeg,'tg','defNeg')):''}</div>
+<div class="sec">Test experience</div><div class="card">${setRow('Rough pad &amp; calculator','In the test menu',sw(SET.tools,'tg','tools'))}${setRow('Full-screen exam mode','Full-paper exam tests only',sw(SET.fullscreen,'tg','fullscreen'))}${setRow('Show timer','Hide it to reduce pressure',sw(SET.showTimer,'tg','showTimer'))}${setRow('Auto-next on answer','Jump ahead after choosing',sw(SET.autoNext,'tg','autoNext'))}${setRow('Shuffle questions','Within each unit',sw(SET.shuffleQ,'tg','shuffleQ'))}${setRow('Shuffle options','Stops memorising positions',sw(SET.shuffleO,'tg','shuffleO'))}${setRow('Confirm before submit','',sw(SET.confirmSubmit,'tg','confirmSubmit'))}${setRow('Auto-save wrong answers','Builds your revision notebook',sw(SET.autoWrong,'tg','autoWrong'))}${setRow('Haptic feedback','Light vibration on taps',sw(SET.haptic,'tg','haptic'))}${setRow('Keep screen awake','During tests',sw(SET.wake,'tg','wake'))}${setRow('Default unit-test time','Minutes',`<input type="number" id="dm" min="1" max="180" value="${SET.defMins}">`)}${(PP.II.negative||PP.I.negative)?setRow('Negative marking by default','For unit-wise tests',sw(SET.defNeg,'tg','defNeg')):''}</div>
 <div class="sec">Help</div><div class="card"><button class="btn g s" data-act="tour">▶ Replay the app tour</button></div>
 <div class="sec">Data</div><div class="card"><p class="mu">Stored on this device: ${ATT.length} tests · ${Object.keys(SAV).length} saved questions · ${kb} KB</p><div class="row"><button class="btn g s" data-act="export">⬇ Backup</button><button class="btn g s" data-act="import">⬆ Restore</button><button class="btn g s" data-act="wipe" style="color:#ef4444">🗑 Clear data</button></div></div><p class="mu c">Urdu NET Arena · UGC NET JRF Paper II</p>`}
 function sheet(){const tabs=[['last','📊 Last test'],['all','📈 Overall'],['chap','📚 Units'],['sav','🔖 Revision'],['set','⚙️ Settings']];
 $('#stabs').innerHTML=tabs.map(t=>`<button class="chip ${S.tab===t[0]?'on':''}" data-act="tab" data-v="${t[0]}">${t[1]}</button>`).join('');
-const b=$('#sbody'),y=b.scrollTop;b.innerHTML=({last:tLast,all:tAll,chap:tTopics,sav:tSav,set:tSet})[S.tab]();b.scrollTop=y}
-function openSheet(tab){if(tab)S.tab=tab;sheet();$('#sheet').classList.add('show');$('#shade2').classList.add('show')}
+const b=$('#sbody'),y=b.scrollTop;b.innerHTML=(S.tab==='all'||S.tab==='chap'?apChips():'')+({last:tLast,all:tAll,chap:tTopics,sav:tSav,set:tSet})[S.tab]();b.scrollTop=y}
+function openSheet(tab){if(!sheetOpen())S.ap=S.view==='test'?S.tpaper:S.paper;if(tab)S.tab=tab;sheet();$('#sheet').classList.add('show');$('#shade2').classList.add('show')}
 function closeSheet(){$('#sheet').classList.remove('show');$('#shade2').classList.remove('show')}
 const sheetOpen=()=>$('#sheet').classList.contains('show');
 
@@ -328,8 +340,8 @@ function toolTab(t){S.ttab=t;$('#padWrap').style.display=t==='pad'?'flex':'none'
 
 /* ---------- tour ---------- */
 const TOUR=[
-{i:'👋',t:'Welcome to Urdu NET Arena',d:'Practise UGC NET JRF Urdu Paper II previous-year questions by year &amp; shift, or unit by unit, in exam-style tests or instant-feedback quizzes.'},
-{i:'📝',t:'Two ways to practise',d:'<b>Exam Test</b> is timed (with full-screen mode for full papers). <b>Quiz</b> shows the answer and explanation right away. Choose a <b>Full paper</b> by year and shift, or <b>Unit-wise</b> practice across all 10 syllabus units.'},
+{i:'👋',t:'Welcome to Wise Choice · UGC NET Urdu',d:'Prepare for <b>both papers</b>: Paper I (Teaching &amp; Research Aptitude) and Paper II (Urdu). Practise previous-year papers by year &amp; shift, or drill any unit and sub-topic.'},
+{i:'📝',t:'Two papers, two ways to practise',d:'Pick <b>Paper I</b> or <b>Paper II</b> first. Then choose <b>Exam Test</b> (timed) or <b>Quiz</b> (instant answers), and a <b>Full paper</b> or <b>Unit-wise</b> practice. In unit-wise mode you can narrow down to <b>sub-topics</b> too.'},
 {i:'🎛️',t:'The floating menu',d:'Tap the round button at the bottom-right. On the home screen it opens Analytics, Revision and Settings. During a test it holds ⏸ Pause, ▦ the question palette, ✏️ rough pad, 🧮 calculator and ✕ exit.'},
 {i:'📊',t:'Know your strengths',d:'Open Analytics for a <b>radar chart</b>, accuracy bars by unit, time-per-question insights, your <b>daily practice calendar</b>, and export your attempted questions with your answers.'},
 {i:'🔁',t:'Revise smartly',d:'Wrong answers go to a <b>spaced-repetition notebook</b> (back after 1, 3, 7, 14 days). The <b>weak-area coach</b> on the home screen picks the unit that needs you most.'}];
@@ -341,14 +353,16 @@ const tourEnd=()=>{$('#tour').classList.remove('show');put('un_tour',1)};
 $('#imp').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
 r.onload=()=>{try{const d=JSON.parse(r.result);if(d.att)ATT=d.att;if(d.sav)SAV=d.sav;if(d.days)DAYM=d.days;if(d.set)Object.assign(SET,d.set);if(d.seen)SEEN=d.seen;put('un_att',ATT);put('un_sav',SAV);put('un_days',DAYM);put('un_seen',SEEN);saveSet();sheet();alert('Backup restored.')}catch(x){alert('That file is not a valid backup.')}};
 r.readAsText(f);e.target.value=''});
-function setTopicOnly(v){TN.forEach(t=>S.secs[t]=(t===v));S.mode='sec';S.kind='quiz';S.year='all';S.sh='all';S.pool='all'}
+function setTopicOnly(v){const up=PK.find(k=>PP[k].topics.some(t=>t.n===v))||'II';S.paper=up;setTP(up);TALL.forEach(t=>S.secs[t]=(t===v));S.subs={};S.mode='sec';S.kind='quiz';S.year='all';S.sh='all';S.pool='all'}
 const A={
 dial:()=>$('#dial').classList.toggle('open'),
 theme:()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';put('un_t',root.dataset.theme);if(sheetOpen())sheet();if(toolsOpen()&&S.ttab==='pad')padDraw()},
 pick:v=>{root.dataset.pal=v;put('un_p',v);if(sheetOpen())sheet()},
-mode:v=>{S.mode=v;if(v==='full'&&S.year==='all')S.year=String(latest.year);home(true)},
+paper:v=>{S.paper=v;setTP(v);S.sh='all';const l=latestOf(v);if(S.mode==='full'){S.year=l?String(l.year):'all';S.shift=l?String(l.shift):'1'}home()},
+mode:v=>{S.mode=v;home(true)},
+sub:v=>{S.subs[v]=!S.subs[v];home(true)},subclear:()=>{S.subs={};home(true)},ap:v=>{S.ap=v;sheet()},
 kind:v=>{S.kind=v;home(true)},
-year:v=>{S.year=String(v);home(true)},
+year:v=>{S.year=String(v);if(S.mode==='full'&&!PL.some(p=>p.paper===S.paper&&String(p.year)===S.year&&String(p.shift)===S.shift)){const l=PL.find(p=>p.paper===S.paper&&String(p.year)===S.year);if(l)S.shift=String(l.shift)}home(true)},
 shift:v=>{if(S.mode==='full')S.shift=String(v);else S.sh=String(v);home(true)},
 sec:v=>{S.secs[v]=!S.secs[v];home(true)},cnt:v=>{S.cnt=+v;home(true)},
 topall:()=>{const c=counts(S.year,S.sh,S.pool==='unseen');TN.forEach(t=>S.secs[t]=!LOADED||c[t]>0);home(true)},
